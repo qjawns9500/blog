@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="join">
+    <insert id ="userJoinInsert" parameterType="com.collab.dto.JoinDto">
+        INSERT INTO joinuser(userId ,userPwd ,userName,phoneNo ,email,nikename,address)VALUES(#{id},#{password},#{username},#{phone},#{email},#{nikename},#{address})
+    </insert>
+
+    <select id="existIdcheck" parameterType="String">
+        SELECT COUNT(joinuser.userId) FROM joinuser WHERE userId = #{userId}
+    </select>
+</mapper>

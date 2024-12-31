@@ -1,0 +1,26 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+@charset "utf-8";
+*{outline:0!important; box-sizing:border-box;}
+html,body,h1,h2,h3,h4,h5,h6,div,p,blockquote,pre,code,address,ul,ol,li,menu,nav,section,article,aside,dl,dt,dd,table,thead,tbody,tfoot,label,caption,th,td,form,fieldset,legend,hr,input,button,textarea,object,figure,figcaption {margin:0;padding:0;}
+html,body{width:100%;}
+html{font-family:'Pretendard';}
+body{width:100%;background:#fff;min-width:280px;-ms-text-size-adjust:100%;text-size-adjust:100%;-webkit-text-size-adjust:100%;word-wrap:break-word;word-break:keep-all;}
+body,input,select,textarea,button{border:none;font-size:12px; color:#000;}
+ul,ol,li{list-style:none;}
+table{width:100%;border-spacing:0;border-collapse:collapse;}
+img,fieldset{width:100%;border:0;}
+address,cite,code,em{font-style:normal;font-weight:normal;}
+label,img,input,select,textarea,button{vertical-align:middle;}
+.hide,caption,legend{line-height:0;font-size:1px;overflow:hidden;}
+hr{display:none;}
+main,header,section,nav,footer,aside,article,figure{display:block;}
+a{color:#000;text-decoration:none;}
+img,svg {width:auto; max-width:100%;}
+
+body::-webkit-scrollbar {width:8px; border-radius:8px; padding:0 0 0 0;}
+body::-webkit-scrollbar:horizontal {height:8px; border-radius:8px; padding:0 0 0 0;}
+body::-webkit-scrollbar-thumb {background-color:rgb(88, 135, 255); border-radius:8px;}
+body::-webkit-scrollbar-track {background-color:#ffffff30; border-radius:8px;}

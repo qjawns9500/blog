@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="main">
+    <!-- 모임리스트 조회 쿼리 (좋아요 개수 포함) -->
+    <select id="getMettingList" resultType="com.collab.dto.MeetingDto">
+        SELECT regId,
+               thumbnail,
+               title,
+               content,
+               DATE_FORMAT(createDate,'%y-%m-%d') AS createDate,
+               DATE_FORMAT(strPeriod,'%y-%m-%d') AS strPeriod,
+               DATE_FORMAT(endPeriod,'%y-%m-%d') AS endPeriod,
+               deleteYn,
+               categoryId,
+               viewCnt,
+               <!-- 서브쿼리 -->
+               (SELECT COUNT(regId) FROM likes WHERE regId = metting.regId) as likeCnt
+        FROM metting
+   </select>
+
+
+    <!-- 모임게시글 저장 -->
+   <insert id="saveMeetting" parameterType="com.collab.dto.MeetingDto" useGeneratedKeys="true" keyProperty="regId">
+       INSERT INTO metting (title,content,createDate,strPeriod,endPeriod,deleteYn,viewCnt) VALUES (#{title},#{content},now(),now(),now(),"N",0)
+   </insert>
+
+    <!-- 모임게시글 조회수 증가 -->
+    <update id="increaseMeetingViewCnt" parameterType="int">
+        UPDATE metting
+        SET viewCnt = viewCnt + 1
+        WHERE regId = #{noticeId};
+    </update>
+
+    <!-- 모임 게시글 조회수 조회 -->
+    <select id="selectMeetingViewCnt" parameterType="int" resultType="int">
+        SELECT viewCnt
+        FROM metting;
+    </select>
+
+    <!-- 모임 상세페이지 조회 쿼리 -->
+    <select id="getMeetingDetail" parameterType="int" resultType="com.collab.dto.MeetingDto">
+     SELECT regId,
+            title,
+            content,
+            DATE_FORMAT(createDate,'%y-%m-%d') AS createDate,
+            DATE_FORMAT(strPeriod,'%y-%m-%d') AS strPeriod,
+            DATE_FORMAT(endPeriod,'%y-%m-%d') AS endPeriod,
+            deleteYn
+     FROM metting
+     WHERE regId = #{regId}
+    </select>
+
+    <!-- 좋아요 등록 -->
+    <insert id="insertLikes" parameterType="int">
+        INSERT INTO likes(createDate,regId,userId) VALUES (now(),#{regId},"정대훈")
+    </insert>
+
+    <!-- 좋아요 삭제 -->
+    <delete id="deleteLikes" parameterType="int">
+    DELETE  FROM likes
+    WHERE regId =#{regId} AND userId = "정대훈"
+    </delete>
+
+    <!-- 게시글에 대한 내 좋아요 기록이 있는지 확인 -->
+    <select id="checkMyLikes" parameterType="int" resultType="int">
+        SELECT COUNT(*) FROM likes WHERE regId = #{regId} AND userId ="정대훈"
+    </select>
+
+
+    <!-- 좋아요 누른 게시글 리스트 추출 -->
+    <select id="myLikesList" resultType="com.collab.dto.MeetingDto">
+--         Join을 사용한 쿼리
+--         SELECT metting.title, metting.content
+--         FROM likes INNER JOIN metting ON metting.regId = likes.regId WHERE userId = "정대훈";
+
+    --서브 쿼리를 사용한 쿼리
+    SELECT metting.title FROM metting WHERE metting.regId IN
+    (SELECT likes.regId FROM likes WHERE likes.userId = "정대훈" );
+    </select>
+
+    <!-- 해시태그 종류 테이블에 데이터 삽입 -->
+    <insert id="insertHashtagType" parameterType="list">
+        INSERT INTO hashtagTypes (tagContent) VALUES
+        <foreach collection="list" item="hashtag" separator=",">
+            (#{hashtag})
+        </foreach>
+    </insert>
+
+    <!-- 해시태그 테이블 삽입 -->
+    <insert id="insertHashtag" parameterType="com.collab.dto.MeetingDto">
+        INSERT INTO hashtag (tagtypeId,regId,createDate)
+        VALUES
+        <foreach collection="hashtag" item="hashtagItem" separator=",">
+            (
+            (SELECT tagtypeId FROM hashtagtypes WHERE tagContent = #{hashtagItem}),#{regId},now()
+            )
+        </foreach>
+    </insert>
+
+    <!--해시태그 가져오기-->
+    <select id="selectHashtag" resultType="com.collab.dto.HashtagDto">
+        SELECT hashtagtypes.tagContent,hashtag.regId,hashtag.tagtypeId
+        FROM hashtagtypes
+        INNER JOIN hashtag ON hashtagtypes.tagtypeId = hashtag.tagtypeId;
+    </select>
+
+
+    <!-- 해시태그 중복 체크 -->
+        <select id="checkDuplicateHashtagType" parameterType="com.collab.dto.MeetingDto" resultType="String">
+            SELECT tagContent
+            FROM hashtagtypes
+            WHERE tagContent IN (
+            <foreach collection="hashtag" item="hashtagItem" separator=",">
+                #{hashtagItem}
+             </foreach>
+                )
+
+        </select>
+
+    <!-- 해시태그 누적 랭킹 조회 -->
+    <select id="selectToalRanking" resultType="com.collab.dto.RankingDto">
+        SELECT hashtagtypes.tagContent, COUNT(hashtag.tagtypeId) as totalCount
+        FROM hashtag
+        INNER JOIN hashtagtypes ON  hashtag.tagtypeId = hashtagtypes.tagtypeId
+        GROUP BY hashtag.tagtypeId;
+    </select>
+
+    <!-- 해시태그 주간 랭킹 조회 -->
+    <select id="selectWeeklyranking" resultType="com.collab.dto.RankingDto">
+        SELECT tagContent , COUNT(weeklyrank.tagtypeId) as totalCount
+        FROM weeklyrank
+        GROUP BY weeklyrank.tagtypeId
+    </select>
+
+
+    <!--해시태그 주간 랭킹테이블 삽입 -->
+    <insert id="insertWeeklyranking">
+        INSERT INTO weeklyrank(tagId, tagtypeId, tagContent, tagCreateDate)
+        SELECT h.tagId, h.tagtypeId, ht.tagContent, h.createDate
+        FROM hashtag h
+        INNER JOIN hashtagtypes ht ON h.tagtypeId = ht.tagtypeId
+        LEFT JOIN weeklyrank wr ON h.tagId = wr.tagId  AND h.tagtypeId = wr.tagtypeId
+        WHERE wr.tagId IS NULL
+        AND WEEK(h.createDate, 1) = WEEK(CURDATE(), 1)
+        AND YEAR(h.createDate) = YEAR(CURDATE());
+    </insert>
+
+
+
+<!--     해시태그 연관 게시글 보여주기 -->
+    <select id="selectRelatedPosts" parameterType="int" resultType="com.collab.dto.MeetingDto">
+        SELECT  m.title,m.content, m.strPeriod,m.endPeriod, m.regId
+        FROM hashtagtypes ht
+        INNER JOIN hashtag h ON ht.tagtypeId = h.tagtypeId
+        AND ht.tagtypeId = #{tagtypeId}
+        INNER JOIN metting m ON m.regId = h.regId;
+    </select>
+
+</mapper>
